@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CRRT 계산기</title>
+    <style>
+        body { font-family: -apple-system, sans-serif; padding: 15px; background-color: #f4f7f6; color: #333; }
+        .card { max-width: 400px; margin: auto; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); position: relative; }
+        h2 { color: #2c3e50; font-size: 1.3rem; text-align: center; margin-top: 0; margin-bottom: 5px; }
+        #currentTime { text-align: center; font-size: 0.85rem; color: #e67e22; font-weight: bold; margin-bottom: 15px; height: 1.2rem; }
+        .config-btn { position: absolute; top: 15px; right: 15px; background: none; border: none; font-size: 1.2rem; cursor: pointer; }
+        #configPanel { display: none; background: #f9f9f9; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px dashed #bdc3c7; }
+
+        .section { background: #f8f9fa; border-radius: 10px; padding: 14px; margin-bottom: 14px; border: 1px solid #e9ecef; }
+        .section-title { font-size: 0.8rem; font-weight: bold; color: #7f8c8d; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 2px solid #dfe6e9; }
+        .section-title.blue { color: #2980b9; border-bottom-color: #3498db; }
+        .section-title.green { color: #27ae60; border-bottom-color: #2ecc71; }
+        .section-title.purple { color: #8e44ad; border-bottom-color: #9b59b6; }
+
+        .input-group { margin-bottom: 10px; }
+        .input-group:last-child { margin-bottom: 0; }
+        label { display: block; margin-bottom: 4px; font-weight: bold; font-size: 0.85rem; color: #34495e; }
+        input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 1.1rem; -webkit-appearance: none; background: white; }
+        .sign-selector { display: flex; gap: 5px; margin-bottom: 8px; }
+        .sign-btn { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 8px; background: #eee; cursor: pointer; font-weight: bold; font-size: 0.85rem; }
+        .sign-btn.active { background: #3498db; color: white; border-color: #2980b9; }
+        .sign-btn.neg.active { background: #e74c3c; border-color: #c0392b; }
+        button.main-btn { width: 100%; padding: 16px; background: #2c3e50; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 1.1rem; font-weight: bold; margin-top: 4px; }
+        .result { margin-top: 20px; padding: 15px; background: #fff3e0; border-radius: 10px; border-left: 5px solid #e67e22; animation: fadeIn 0.3s; }
+        .result-item { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 1.05rem; }
+        .highlight { font-weight: bold; color: #d35400; }
+        .sub-result { font-size: 0.9rem; color: #7f8c8d; }
+        hr { border: 0; border-top: 1px solid #eee; margin: 10px 0; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <button class="config-btn" onclick="toggleConfig()">⚙️</button>
+        <h2>CRRT 계산기</h2>
+        <div id="currentTime">현재 시각 가동 중...</div>
+
+        <div id="configPanel">
+            <label>⚙️ 기준 시각 설정 (0~23시)</label>
+            <input type="number" id="targetHour" value="6" inputmode="numeric" oninput="updateLabels()">
+            <button onclick="toggleConfig()" style="width:100%; margin-top:10px; padding:8px; border-radius:5px; border:1px solid #ccc;">설정 닫기</button>
+            <div style="text-align:right; margin-top:8px; font-size:0.65rem; color:#bdc3c7;">by Seongyeop</div>
+        </div>
+
+        <!-- 섹션 1: 수액 -->
+        <div class="section">
+            <div class="section-title blue">💧 수액</div>
+            <div class="input-group">
+                <label id="inputLabel">6시까지 예상 Input (mL)</label>
+                <input type="number" id="inputVol" placeholder="입력하세요" inputmode="numeric">
+            </div>
+        </div>
+
+        <!-- 섹션 2: I/O 목표 -->
+        <div class="section">
+            <div class="section-title green">📊 I/O 목표</div>
+            <div class="input-group">
+                <label>Daily Target I/O (mL)</label>
+                <div class="sign-selector">
+                    <button id="btnDailyPos" class="sign-btn" onclick="setSign('daily', 1)">+ (Positive)</button>
+                    <button id="btnDailyNeg" class="sign-btn neg active" onclick="setSign('daily', -1)">- (Negative)</button>
+                </div>
+                <input type="number" id="dailyTargetIO" placeholder="하루 전체 목표" inputmode="numeric">
+                <input type="hidden" id="dailySign" value="-1">
+            </div>
+            <div class="input-group" style="margin-top: 10px;">
+                <label>현재 누적 I/O (mL)</label>
+                <div class="sign-selector">
+                    <button id="btnCurrPos" class="sign-btn" onclick="setSign('curr', 1)">+ (Positive)</button>
+                    <button id="btnCurrNeg" class="sign-btn neg active" onclick="setSign('curr', -1)">- (Negative)</button>
+                </div>
+                <input type="number" id="currentIO" placeholder="현재까지 발생한 I/O" inputmode="numeric">
+                <input type="hidden" id="currSign" value="-1">
+            </div>
+        </div>
+
+        <!-- 섹션 3: CRRT 설정 -->
+        <div class="section">
+            <div class="section-title purple">⚕️ CRRT 설정</div>
+            <div class="input-group">
+                <label>환자 체중 (kg)</label>
+                <input type="number" id="bwt" placeholder="입력하세요" inputmode="numeric">
+            </div>
+            <div class="input-group" style="margin-top: 10px;">
+                <label>목표 Dose (mL/kg/hr)</label>
+                <input type="number" id="dose" value="30" inputmode="numeric">
+            </div>
+        </div>
+        
+        <button class="main-btn" onclick="calculate()">설정값 계산하기</button>
+
+        <div id="resultArea" class="result" style="display:none;">
+            <div class="result-item"><span>남은 시간:</span> <span class="highlight" id="resHours">0</span> 시간</div>
+            <div class="result-item sub-result"><span>남은 목표 I/O:</span> <span id="resRemainIO">0</span> mL</div>
+            <hr>
+            <div class="result-item"><span>순제수량 (Net UF):</span> <span class="highlight" id="resUF">0</span> mL/hr</div>
+            <div class="result-item"><span>투석액 (Dialysate):</span> <span class="highlight" id="resDial">0</span> mL/hr</div>
+            <div class="result-item"><span>보충액 (Replacement):</span> <span class="highlight" id="resRepl">0</span> mL/hr</div>
+        </div>
+    </div>
+
+    <script>
+        (function startTime() {
+            const today = new Date();
+            const timeStr = "현재: " + today.getFullYear() + "." + (today.getMonth()+1) + "." + today.getDate() + " " + 
+                          today.getHours() + ":" + String(today.getMinutes()).padStart(2, '0') + ":" + String(today.getSeconds()).padStart(2, '0');
+            const el = document.getElementById('currentTime');
+            if(el) el.innerHTML = timeStr;
+            setTimeout(startTime, 1000);
+        })();
+
+        function updateLabels() {
+            const h = document.getElementById('targetHour').value;
+            const displayHour = h === "" ? "?" : h;
+            document.getElementById('inputLabel').innerText = displayHour + "시까지 예상 Input (mL)";
+        }
+
+        function setSign(group, s) {
+            if (group === 'daily') {
+                document.getElementById('dailySign').value = s;
+                document.getElementById('btnDailyPos').classList.toggle('active', s === 1);
+                document.getElementById('btnDailyNeg').classList.toggle('active', s === -1);
+            } else {
+                document.getElementById('currSign').value = s;
+                document.getElementById('btnCurrPos').classList.toggle('active', s === 1);
+                document.getElementById('btnCurrNeg').classList.toggle('active', s === -1);
+            }
+        }
+
+        function toggleConfig() {
+            const panel = document.getElementById('configPanel');
+            panel.style.display = (panel.style.display === 'block') ? 'none' : 'block';
+        }
+
+        function calculate() {
+            const bwt = parseFloat(document.getElementById('bwt').value);
+            const inputVol = parseFloat(document.getElementById('inputVol').value);
+            const dose = parseFloat(document.getElementById('dose').value);
+            const targetH = parseInt(document.getElementById('targetHour').value);
+
+            const dailyVal = parseFloat(document.getElementById('dailyTargetIO').value);
+            const dailySign = parseInt(document.getElementById('dailySign').value);
+            const currVal = parseFloat(document.getElementById('currentIO').value);
+            const currSign = parseInt(document.getElementById('currSign').value);
+
+            const dailyTargetIO = dailyVal * dailySign;
+            const currentIO = currVal * currSign;
+
+            if(isNaN(bwt) || isNaN(dailyVal) || isNaN(currVal) || isNaN(targetH) || isNaN(inputVol)) {
+                alert("빈칸 없이 모든 숫자를 입력해주세요.");
+                return;
+            }
+
+            const remainingIO = dailyTargetIO - currentIO;
+
+            const now = new Date();
+            let targetDate = new Date();
+            targetDate.setHours(targetH, 0, 0, 0);
+            if (now >= targetDate) targetDate.setDate(targetDate.getDate() + 1);
+
+            const diffHrs = (targetDate - now) / (1000 * 60 * 60);
+            const netUF = (inputVol - remainingIO) / diffHrs;
+            
+            const totalEffluent = bwt * dose;
+            const remaining = totalEffluent - netUF;
+            const dialysate = remaining > 0 ? remaining / 2 : 0;
+            const replacement = remaining > 0 ? remaining / 2 : 0;
+
+            document.getElementById('resHours').innerText = diffHrs.toFixed(1);
+            document.getElementById('resRemainIO').innerText = Math.round(remainingIO);
+            document.getElementById('resUF').innerText = Math.round(netUF);
+            document.getElementById('resDial').innerText = Math.round(dialysate);
+            document.getElementById('resRepl').innerText = Math.round(replacement);
+            document.getElementById('resultArea').style.display = 'block';
+        }
+    </script>
+</body>
+</html>
