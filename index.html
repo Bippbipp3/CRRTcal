@@ -115,6 +115,38 @@
             <div class="result-item"><span>투석액 (Dialysate):</span> <span class="highlight" id="resDial">0</span> mL/hr</div>
             <div class="result-item"><span>보충액 (Replacement):</span> <span class="highlight" id="resRepl">0</span> mL/hr</div>
         </div>
+
+        <button class="main-btn" style="background:#5d6d7e; margin-top:14px;" onclick="toggleHyperNa()" id="hyperNaBtn">🧂 Hypernatremia CKRT 계산하기</button>
+
+        <div id="hyperNaPanel" style="display:none; margin-top:14px;">
+            <div class="section">
+                <div class="section-title" style="color:#5d6d7e; border-bottom-color:#85929e;">🧂 Hypernatremia 보정 (3% NaCl)</div>
+                <div class="input-group">
+                    <label>투석액 Qd (mL/hr)</label>
+                    <input type="number" id="hnaQd" placeholder="예: 1000" inputmode="numeric">
+                </div>
+                <div class="input-group" style="margin-top:10px;">
+                    <label>보충액 Qr,pre (mL/hr)</label>
+                    <input type="number" id="hnaQr" placeholder="예: 1000" inputmode="numeric">
+                </div>
+                <div class="input-group" style="margin-top:10px;">
+                    <label>Target effective bath Na (mEq/L)</label>
+                    <input type="number" id="hnaTargetNa" placeholder="예: 160" inputmode="numeric">
+                </div>
+                <div class="input-group" style="margin-top:10px;">
+                    <label>기본 Dialysate Na (mEq/L)</label>
+                    <input type="number" id="hnaBaseNa" value="140" inputmode="numeric">
+                </div>
+            </div>
+            <button class="main-btn" style="background:#5d6d7e;" onclick="calculateHyperNa()">3% NaCl rate 계산</button>
+
+            <div id="hnaResult" class="result" style="display:none; background:#eaeded; border-left-color:#5d6d7e;">
+                <div class="result-item"><span>총 Qef (Qd + Qr):</span> <span id="hnaQef">0</span> mL/hr</div>
+                <hr>
+                <div class="result-item"><span>3% NaCl rate:</span> <span class="highlight" id="hnaRate" style="color:#5d6d7e;">0</span> mL/hr</div>
+                <div class="result-item sub-result"><span>확인 effective Na:</span> <span id="hnaCheckNa">0</span> mEq/L</div>
+            </div>
+        </div>
         <button class="ref-toggle-btn" onclick="toggleRef()" id="refToggleBtn">
             📋 Reference dose <span id="refArrow">▼</span>
         </button>
@@ -173,6 +205,44 @@
                 document.getElementById('btnCurrPos').classList.toggle('active', s === 1);
                 document.getElementById('btnCurrNeg').classList.toggle('active', s === -1);
             }
+        }
+
+        function toggleHyperNa() {
+            const panel = document.getElementById('hyperNaPanel');
+            const btn = document.getElementById('hyperNaBtn');
+            const isOpen = panel.style.display === 'block';
+            panel.style.display = isOpen ? 'none' : 'block';
+            btn.innerText = isOpen ? '🧂 Hypernatremia CKRT 계산하기' : '🧂 Hypernatremia 패널 닫기';
+        }
+
+        function calculateHyperNa() {
+            const qd = parseFloat(document.getElementById('hnaQd').value);
+            const qr = parseFloat(document.getElementById('hnaQr').value);
+            const targetNa = parseFloat(document.getElementById('hnaTargetNa').value);
+            const baseNa = parseFloat(document.getElementById('hnaBaseNa').value);
+
+            if (isNaN(qd) || isNaN(qr) || isNaN(targetNa) || isNaN(baseNa)) {
+                alert("빈칸 없이 모든 숫자를 입력해주세요.");
+                return;
+            }
+            if (targetNa <= baseNa) {
+                alert("Target Na는 기본 Dialysate Na보다 높아야 합니다.");
+                return;
+            }
+            if (targetNa >= 513) {
+                alert("Target Na가 너무 높습니다.");
+                return;
+            }
+
+            const qef = qd + qr;
+            // Rate_3% × (513 - Target Na) = Qef × (Target Na - baseNa)
+            const rate3 = qef * (targetNa - baseNa) / (513 - targetNa);
+            const checkNa = (qef * baseNa + rate3 * 513) / (qef + rate3);
+
+            document.getElementById('hnaQef').innerText = Math.round(qef);
+            document.getElementById('hnaRate').innerText = rate3.toFixed(1);
+            document.getElementById('hnaCheckNa').innerText = checkNa.toFixed(1);
+            document.getElementById('hnaResult').style.display = 'block';
         }
 
         function toggleRef() {
