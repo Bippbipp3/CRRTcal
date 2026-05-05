@@ -33,6 +33,18 @@
         .sub-result { font-size: 0.9rem; color: #7f8c8d; }
         hr { border: 0; border-top: 1px solid #eee; margin: 10px 0; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .ref-toggle-btn { width: 100%; padding: 12px; background: #ecf0f1; color: #2c3e50; border: 1px solid #bdc3c7; border-radius: 8px; cursor: pointer; font-size: 0.9rem; font-weight: bold; margin-top: 12px; text-align: left; display: flex; justify-content: space-between; align-items: center; }
+        .ref-toggle-btn:hover { background: #dfe6e9; }
+        .ref-panel { display: none; margin-top: 8px; padding: 14px; background: #f0f4ff; border-radius: 10px; border: 1px solid #c5cae9; animation: fadeIn 0.2s; overflow-x: auto; }
+        .ref-panel h4 { margin: 0 0 3px 0; font-size: 0.85rem; color: #3949ab; }
+        .ref-panel p { margin: 0 0 10px 0; font-size: 0.78rem; color: #5c6bc0; }
+        .ref-table { width: 100%; border-collapse: collapse; font-size: 0.72rem; min-width: 480px; }
+        .ref-table th { background: #3949ab; color: white; padding: 6px 5px; text-align: center; }
+        .ref-table td { padding: 5px; text-align: center; border-bottom: 1px solid #c5cae9; color: #333; }
+        .ref-table tr:nth-child(even) { background: #e8eaf6; }
+        .ref-table td:first-child { color: #3949ab; font-weight: bold; }
+        .ref-table td.dial { color: #1565c0; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -103,6 +115,36 @@
             <div class="result-item"><span>투석액 (Dialysate):</span> <span class="highlight" id="resDial">0</span> mL/hr</div>
             <div class="result-item"><span>보충액 (Replacement):</span> <span class="highlight" id="resRepl">0</span> mL/hr</div>
         </div>
+        <button class="ref-toggle-btn" onclick="toggleRef()" id="refToggleBtn">
+            📋 Reference dose <span id="refArrow">▼</span>
+        </button>
+        <div id="refPanel" class="ref-panel">
+            <p>Target effective: <strong>25–30 mL/kg/hr</strong><br>Target delivered: <strong>20–25 mL/kg/hr</strong></p>
+            <div style="overflow-x:auto;">
+            <table class="ref-table">
+                <thead>
+                    <tr>
+                        <th>Bwt (kg)</th>
+                        <th>BFR (mL/min)</th>
+                        <th>Dialysate (mL/hr)</th>
+                        <th>Total Repl. (mL/hr)</th>
+                        <th>Eff. Dose (mL/kg/hr)</th>
+                        <th>FF</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>40–49</td><td>130</td><td class="dial">800</td><td>800</td><td>30.5–37.4</td><td>0.15</td></tr>
+                    <tr><td>50–59</td><td>130</td><td class="dial">900</td><td>900</td><td>28.3–33.4</td><td>0.17</td></tr>
+                    <tr><td>60–69</td><td>130</td><td class="dial">1000</td><td>1000</td><td>26.7–30.7</td><td>0.19</td></tr>
+                    <tr><td>70–79</td><td>130</td><td class="dial">1200</td><td>1200</td><td>27.6–31.2</td><td>0.22</td></tr>
+                    <tr><td>80–89</td><td>150</td><td class="dial">1400</td><td>1400</td><td>28.6–31.8</td><td>0.23</td></tr>
+                    <tr><td>90–99</td><td>170</td><td class="dial">1600</td><td>1600</td><td>29.3–32.3</td><td>0.23</td></tr>
+                    <tr><td>≥100</td><td>180</td><td class="dial">1800</td><td>1800</td><td>27.1–32.5</td><td>0.24</td></tr>
+                </tbody>
+            </table>
+            </div>
+        </div>
+
     </div>
 
     <script>
@@ -131,6 +173,14 @@
                 document.getElementById('btnCurrPos').classList.toggle('active', s === 1);
                 document.getElementById('btnCurrNeg').classList.toggle('active', s === -1);
             }
+        }
+
+        function toggleRef() {
+            const panel = document.getElementById('refPanel');
+            const arrow = document.getElementById('refArrow');
+            const isOpen = panel.style.display === 'block';
+            panel.style.display = isOpen ? 'none' : 'block';
+            arrow.textContent = isOpen ? '▼' : '▲';
         }
 
         function toggleConfig() {
